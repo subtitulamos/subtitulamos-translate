@@ -41,7 +41,7 @@ func newSubtitle(subID int) *subtitle {
 }
 
 func (s *subtitle) getRedisChannelName() string {
-	return fmt.Sprintf("%s-translate-%d", redisEnvPrefix, s.id)
+	return fmt.Sprintf("%s-translate-%d", *redisEnvPrefix, s.id)
 }
 
 func (s *subtitle) close() {

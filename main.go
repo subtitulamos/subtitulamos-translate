@@ -16,12 +16,12 @@ import (
 
 var redisConn redis.Conn
 var psConn redis.PubSubConn
-var redisEnvPrefix string
+var redisEnvPrefix *string
 
 func main() {
 	addr := flag.String("addr", ":8080", "http servicing address")
 	redisPort := flag.String("redis-port", ":6379", "redis service address")
-	redisEnvPrefix = *flag.String("redis-pubsub-env", "dev", "redis pub/sub environment prefix")
+	redisEnvPrefix = flag.String("redis-pubsub-env", "dev", "redis pub/sub environment prefix")
 	flag.Parse()
 
 	var err error
