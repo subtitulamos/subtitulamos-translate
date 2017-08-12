@@ -7,6 +7,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -108,8 +109,15 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if false {
-		// TODO: Auth
+	v, err := redisClient.Get(fmt.Sprintf("authtok-%s-%s", *redisEnvPrefix, token)).Result()
+	if err != nil {
+		log.Printf("(%s, %d) pair fail", token, subID)
+		return
+	}
+
+	expectedSubID, err := strconv.Atoi(v)
+	if err != nil || expectedSubID != subID {
+		log.Printf("(%s, %d) pair fail", token, subID)
 		return
 	}
 

@@ -11,25 +11,30 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/go-redis/redis"
 )
 
-var redisConn redis.Conn
-var psConn redis.PubSubConn
+var redisClient *redis.Client
+var psConn *redis.PubSub
 var redisEnvPrefix *string
 
 func main() {
-	addr := flag.String("addr", ":8080", "http servicing address")
-	redisPort := flag.String("redis-port", ":6379", "redis service address")
+	addr := flag.String("http-addr", ":8080", "http servicing address")
+	redisAddr := flag.String("redis-addr", ":6379", "redis service address")
 	redisEnvPrefix = flag.String("redis-pubsub-env", "dev", "redis pub/sub environment prefix")
 	flag.Parse()
 
-	var err error
-	redisConn, err = redis.Dial("tcp", *redisPort)
+	redisClient = redis.NewClient(&redis.Options{
+		Addr: *redisAddr,
+		DB:   0,
+	})
+
+	_, err := redisClient.Ping().Result()
 	if err != nil {
-		log.Fatal("redis connection failed: ", err)
+		log.Fatal("pinging redis failed: ", err)
 	}
-	psConn = redis.PubSubConn{Conn: redisConn}
+
+	psConn = redisClient.Subscribe("") // Empty subscription
 	go redisListener()
 
 	http.HandleFunc("/", serveWs)

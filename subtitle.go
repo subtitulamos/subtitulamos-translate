@@ -11,8 +11,6 @@ import (
 	"log"
 	"strconv"
 	"strings"
-
-	"github.com/garyburd/redigo/redis"
 )
 
 var subtitles = make(map[int]*subtitle)
@@ -88,32 +86,30 @@ func (s *subtitle) run() {
 }
 
 func redisListener() {
+	defer psConn.Close()
+
 	for {
-		switch v := psConn.Receive().(type) {
-		case redis.Message:
-			idx := strings.LastIndex(v.Channel, "-")
-			if idx < 0 {
-				continue
-			}
-
-			subID, err := strconv.Atoi(v.Channel[idx+1:])
-			if err != nil || subID <= 0 {
-				continue
-			}
-
-			s, ok := subtitles[subID]
-			if !ok {
-				continue
-			}
-			s.hub.broadcast <- v.Data
-
-		case redis.Subscription:
-			// Ignore
-		case redis.Pong:
-			// Ignore
-
-		case error:
-			log.Println(v)
+		msg, err := psConn.ReceiveMessage()
+		if err != nil {
+			log.Println(err)
+			continue
 		}
+
+		idx := strings.LastIndex(msg.Channel, "-")
+		if idx < 0 {
+			continue
+		}
+
+		subID, err := strconv.Atoi(msg.Channel[idx+1:])
+		if err != nil || subID <= 0 {
+			continue
+		}
+
+		s, ok := subtitles[subID]
+		if !ok {
+			continue
+		}
+
+		s.hub.broadcast <- []byte(msg.Payload)
 	}
 }
